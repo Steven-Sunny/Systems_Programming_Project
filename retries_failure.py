@@ -37,5 +37,3 @@ def retry_failures (tries=0, interval=0, command="/home/user/my_script.sh"):
     
     except Exception as e:
         return None
-
-retry_failures()
