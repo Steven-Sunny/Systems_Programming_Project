@@ -11,16 +11,28 @@ def schedule_cron_task():
     month = month_entry.get().strip()
     day_of_week = day_week_entry.get().strip()
 
+    r_seconds = r_seconds_entry.get().strip()
+    r_number = r_number_tries.get().strip()
+    
     # Basic input validation
+    if not all([r_seconds, r_number]):
+        messagebox.showerror("Input Error", "All fields must be filled to create a retry expression.")
+        return
+    try:
+        if(int(r_seconds)>60 or int(r_seconds)<0 and int(r_number)>99 or int(r_number)<0):
+            messagebox.showwarning("Input Bounds", "All values have to be within bounds.")
+            return
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter an integer value.")
+        return
+    
     if not all([command, minute, hour, day_of_month, month, day_of_week]):
         messagebox.showerror("Input Error", "All fields must be filled to create a cron expression.")
         return
 
-    # 1. Create the Cron Expression
     # Format: MIN HOUR DOM MON DOW COMMAND
     cron_expression = f"{minute} {hour} {day_of_month} {month} {day_of_week} {command}"
 
-    # 2. Construct the Bash Command to Update Crontab
     try:
         # Get the current crontab entries
         # Use subprocess.run to capture the current crontab safely
@@ -69,41 +81,78 @@ root = tk.Tk()
 root.title("Bash Cron Job Scheduler")
 
 # --- Command Input ---
-tk.Label(root, text="Bash Command to Run:", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky='w')
+tk.Label(root, text="Bash Command to Run:", font=('Arial', 10, 'bold')).grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='w')
 command_entry = tk.Entry(root, width=50)
-command_entry.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
+command_entry.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
 command_entry.insert(0, "/home/user/my_script.sh") # Example command
 
 # --- Cron Expression Inputs ---
 field_labels = ["Minute (0-59)", "Hour (0-23)", "Day of Month (1-31)", "Month (1-12)", "Day of Week (0-7)"]
+retry_labels = ["Interval (0-60)", "Max Tries (0-99)"]
+retry_values = ["0", "0"] # Default is 0 retries
 default_values = ["0", "10", "*", "*", "*"] # Default is 10:00 AM daily
 
-tk.Label(root, text="--- Cron Recurrence ---", font=('Arial', 10, 'bold')).grid(row=2, column=0, columnspan=2, pady=10)
+cron_frame = tk.Frame(root, padx=10, pady=10, relief=tk.GROOVE, borderwidth=2)
+
+retry_frame = tk.Frame(root, padx=10, pady=10, relief=tk.GROOVE, borderwidth=2)
+
+cron_frame.grid(row=0, column=0, padx=10, pady=10)
+
+retry_frame .grid(row=1, column=0, padx=10, pady=10)
+
+
 
 input_entries = []
+retry_entries = []
+
+
+# Cron frame
+# Loop to create the labels inside the frame
+# # Add the title Label inside the frame
+tk.Label(cron_frame, text="--- Cron Recurrence ---", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=5, pady=10)
 for i, label in enumerate(field_labels):
-    tk.Label(root, text=label).grid(row=3, column=i, padx=1, sticky='w')
+    # Note: Using cron_frame as the parent for the Label
+    tk.Label(cron_frame, text=label).grid(row=1, column=i, padx=1, sticky='w')
 
-minute_entry = tk.Entry(root, width=8)
-minute_entry.grid(row=4, column=0, padx=5)
+minute_entry = tk.Entry(cron_frame, width=8)
+minute_entry.grid(row=2, column=0, padx=5)
 minute_entry.insert(0, default_values[0])
+input_entries.append(minute_entry)
 
-hour_entry = tk.Entry(root, width=8)
-hour_entry.grid(row=4, column=1, padx=5)
+hour_entry = tk.Entry(cron_frame, width=8)
+hour_entry.grid(row=2, column=1, padx=5)
 hour_entry.insert(0, default_values[1])
+input_entries.append(hour_entry)
 
-day_month_entry = tk.Entry(root, width=8)
-day_month_entry.grid(row=4, column=2, padx=5)
+day_month_entry = tk.Entry(cron_frame, width=8)
+day_month_entry.grid(row=2, column=2, padx=5)
 day_month_entry.insert(0, default_values[2])
+input_entries.append(day_month_entry)
 
-month_entry = tk.Entry(root, width=8)
-month_entry.grid(row=4, column=3, padx=5)
+month_entry = tk.Entry(cron_frame, width=8)
+month_entry.grid(row=2, column=3, padx=5)
 month_entry.insert(0, default_values[3])
+input_entries.append(month_entry)
 
-day_week_entry = tk.Entry(root, width=8)
-day_week_entry.grid(row=4, column=4, padx=5)
+day_week_entry = tk.Entry(cron_frame, width=8)
+day_week_entry.grid(row=2, column=4, padx=5)
 day_week_entry.insert(0, default_values[4])
+input_entries.append(day_week_entry)
 
+#retries
+tk.Label(retry_frame, text="--- Cron Retries---", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=5, pady=10)
+for i, label in enumerate(retry_labels):
+    tk.Label(retry_frame, text=label).grid(row=1, column=i, padx=1, sticky='w')
+
+r_seconds_entry = tk.Entry(retry_frame, width=8)
+r_seconds_entry.grid(row=2, column=0, padx=5)
+r_seconds_entry.insert(0, retry_values[0])
+retry_entries.append(r_seconds_entry)
+
+r_number_tries = tk.Entry(retry_frame, width=8)
+r_number_tries.grid(row=2, column=1, padx=5)
+r_number_tries.insert(0, retry_values[1])
+retry_entries.append(r_number_tries)
 
 # --- Schedule Button ---
 schedule_button = tk.Button(root, text="Add Cron Job", command=schedule_cron_task, font=('Arial', 12, 'bold'), bg='darkblue', fg='white')
