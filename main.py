@@ -65,7 +65,9 @@ def schedule_cron_task():
                 new_crontab = current_crontab + f"\n{cron_expression}\n"
             else:
                 # Append the new job with retries to the existing crontab
-                new_crontab = current_crontab + rf.retry_failures(r_number, r_seconds, command)
+                new_cron_expression = f"{minute} {hour} {day_of_month} {month} {day_of_week} {rf.retry_failures(r_number, r_seconds, command)}"
+                new_crontab = current_crontab + f"\n{new_cron_expression}\n"
+                print (new_crontab)
 
             # Write the new combined crontab back using a pipe
             p1 = subprocess.Popen(['echo', new_crontab], stdout=subprocess.PIPE, text=True)
