@@ -4,6 +4,7 @@ import subprocess
 
 import runnable_check as rc
 import retries_failure as rf
+import get_project_directory as getp
 
 def schedule_cron_task():
     """Reads user input, builds a cron expression, and updates the crontab."""
@@ -97,7 +98,7 @@ root.title("Bash Cron Job Scheduler")
 tk.Label(root, text="Bash Command to Run:", font=('Arial', 10, 'bold')).grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='w')
 command_entry = tk.Entry(root, width=50)
 command_entry.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
-command_entry.insert(0, "/home/steve/Desktop/Systems_Programming_Project/sample_script.sh") # Starter command
+command_entry.insert(0, getp.get_proj_dir()+"/sample_script.sh") # Starter command
 
 # --- Cron Expression Inputs ---
 field_labels = ["Minute (0-59)", "Hour (0-23)", "Day of Month (1-31)", "Month (1-12)", "Day of Week (0-7)"]

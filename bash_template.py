@@ -8,7 +8,7 @@ BASH_TEMPLATE = """#!/bin/bash
 MAX_TRIES={MAX_TRIES}
 WAIT_SECONDS={WAIT_SECONDS}
 COMMAND_TO_RUN="{COMMAND_TO_RUN}"
-LOG_FILE="/home/steve/Desktop/Systems_Programming_Project/logging_file/{TIMESTAMP}.txt"
+LOG_FILE="{LOG_DIR}/logging_file/{TIMESTAMP}.txt"
 
 # --- Main Retry Logic ---
 
