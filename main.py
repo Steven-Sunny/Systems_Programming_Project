@@ -171,5 +171,3 @@ schedule_button.grid(row=5, column=0, columnspan=5, pady=20)
 
 # Start the Tkinter event loop
 root.mainloop()
-
-# /home/steve/Desktop/Systems_Programming_Project/retry_scripts/sample_fail_script_retry_99_1_1764199773.0804682_.sh
