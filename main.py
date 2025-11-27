@@ -31,11 +31,15 @@ def schedule_task(is_chain=False):
         return
 
     try:
-        r_sec_int = int(r_seconds)
-        r_num_int = int(r_number)
+        if((int(r_seconds)<0 or int(r_seconds)>60) or (int(r_number) > 999 or int(r_number)<1)):
+            messagebox.showwarning("Warning", "Values must be within bounds (0 - 60s and 1-999 attempts).")
+            return
     except ValueError:
         messagebox.showerror("Error", "Retry values must be integers.")
         return
+
+    r_sec_int = r_seconds
+    r_num_int = r_number
 
     # 3. Determine Commands List
     commands_list = []
@@ -127,7 +131,7 @@ timing_frame.pack(padx=20, pady=5, fill="x")
 
 # Grid layout for timing
 lbls = ["Min", "Hour", "Day", "Month", "DayWeek", "Max Retries", "Delay (s)"]
-def_vals = ["*", "*", "*", "*", "*", "3", "5"]
+def_vals = ["*", "*", "*", "*", "*", "1", "0"]
 entries = []
 
 for i, txt in enumerate(lbls):
