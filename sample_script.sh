@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# A sample file that always runs. Used for testing.
 OUTPUT_DIR="/home/steve/Desktop/Systems_Programming_Project/sample_output"
 
 BASE_NAME="hello_output"

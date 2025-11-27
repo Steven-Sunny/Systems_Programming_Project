@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# A sample file that can end in an error. Used for testing.
 # --- Failure Mechanism ---
 RANDOM_NUM=$(( RANDOM % 100 ))
 
