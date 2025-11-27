@@ -1,0 +1,36 @@
+[2025-11-26 20:31:07] [INFO] ------------------------------------------------
+[2025-11-26 20:31:07] [INFO] WORKFLOW STARTED: Workflow
+[2025-11-26 20:31:07] [INFO] Starting Task: task1.sh
+[2025-11-26 20:31:08] [INFO] Task Success: task1.sh
+[2025-11-26 20:31:08] [INFO] Starting Task: task1.sh
+[2025-11-26 20:31:09] [INFO] Task Success: task1.sh
+[2025-11-26 20:31:09] [INFO] WORKFLOW COMPLETED SUCCESSFULLY: Workflow
+[2025-11-26 20:31:09] [WARN] Mail command not found. Simulated email: Workflow Success: Workflow
+[2025-11-26 20:34:19] [INFO] ------------------------------------------------
+[2025-11-26 20:34:19] [INFO] WORKFLOW STARTED: Workflow
+[2025-11-26 20:34:19] [INFO] Starting Task: task1.sh
+[2025-11-26 20:34:20] [INFO] Task Success: task1.sh
+[2025-11-26 20:34:20] [INFO] Starting Task: task2.sh
+[2025-11-26 20:34:20] [ERROR] Task Failed: task2.sh (Attempt 1/3)
+[2025-11-26 20:34:20] [WARN] Retrying in 2 seconds...
+[2025-11-26 20:34:22] [ERROR] Task Failed: task2.sh (Attempt 2/3)
+[2025-11-26 20:34:22] [WARN] Retrying in 2 seconds...
+[2025-11-26 20:34:24] [ERROR] Task Failed: task2.sh (Attempt 3/3)
+[2025-11-26 20:34:24] [CRITICAL] Workflow Aborted: Dependency failed at task2.sh
+[2025-11-26 20:34:24] [WARN] Mail command not found. Simulated email: Workflow Failed: Workflow
+[2025-11-26 20:46:41] [INFO] ------------------------------------------------
+[2025-11-26 20:46:41] [INFO] WORKFLOW STARTED: Workflow
+[2025-11-26 20:46:41] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:42] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:42] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:43] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:43] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:44] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:44] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:45] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:45] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:46] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:46] [INFO] Starting Task: task1.sh
+[2025-11-26 20:46:47] [INFO] Task Success: task1.sh
+[2025-11-26 20:46:47] [INFO] WORKFLOW COMPLETED SUCCESSFULLY: Workflow
+[2025-11-26 20:46:47] [WARN] Mail command not found. Simulated email: Workflow Success: Workflow

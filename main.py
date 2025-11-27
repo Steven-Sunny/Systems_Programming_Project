@@ -1,173 +1,203 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk # Needed for Tabs
 import subprocess
+import os
 
+# Custom Imports
 import runnable_check as rc
 import retries_failure as rf
 import get_project_directory as getp
 
-def schedule_cron_task():
-    """Reads user input, builds a cron expression, and updates the crontab."""
-    command = command_entry.get().strip()
+def schedule_task(is_chain=False):
+    """
+    Unified scheduling function.
+    is_chain=False -> Reads from the Single Task Entry.
+    is_chain=True  -> Reads from the Workflow Listbox.
+    """
+    
+    # 1. Gather Inputs
     minute = minute_entry.get().strip()
     hour = hour_entry.get().strip()
     day_of_month = day_month_entry.get().strip()
     month = month_entry.get().strip()
     day_of_week = day_week_entry.get().strip()
-
     r_seconds = r_seconds_entry.get().strip()
     r_number = r_number_tries.get().strip()
-    
-    # Basic input validation
-    if not all([r_seconds, r_number]):
-        messagebox.showerror("Input Error", "All fields must be filled to create a retry expression.")
+
+    # 2. Validate Inputs
+    if not all([minute, hour, day_of_month, month, day_of_week, r_seconds, r_number]):
+        messagebox.showerror("Error", "All timing and retry fields must be filled.")
         return
+
     try:
-        if(int(r_seconds)>60 or int(r_seconds)<1 and int(r_number)>99 or int(r_number)<0):
-            messagebox.showwarning("Input Bounds", "All values have to be within bounds.")
+        if((int(r_seconds)<0 or int(r_seconds)>60) or (int(r_number) > 999 or int(r_number)<1)):
+            messagebox.showwarning("Warning", "Values must be within bounds (0 - 60s and 1-999 attempts).")
             return
     except ValueError:
-        messagebox.showerror("Input Error", "Please enter an integer value.")
+        messagebox.showerror("Error", "Retry values must be integers.")
         return
+
+    r_sec_int = r_seconds
+    r_num_int = r_number
+
+    # 3. Determine Commands List
+    commands_list = []
     
-    if not all([command, minute, hour, day_of_month, month, day_of_week]):
-        messagebox.showerror("Input Error", "All fields must be filled to create a cron expression.")
+    if not is_chain:
+        # Single Task Mode
+        cmd = single_command_entry.get().strip()
+        if not cmd:
+            messagebox.showerror("Error", "Command field is empty.")
+            return
+        commands_list.append(cmd)
+    else:
+        # Chain Mode: Get all items from Listbox
+        commands_list = list(chain_listbox.get(0, tk.END))
+        if not commands_list:
+            messagebox.showerror("Error", "Workflow list is empty. Add tasks first.")
+            return
+
+    # 4. Check Validity of Scripts
+    for script in commands_list:
+        if not rc.is_script_runnable(script):
+            messagebox.showerror("Script Error", f"The script does not exist or is not executable:\n{script}")
+            return
+
+    # 5. Generate the Bash Wrapper (The "Bridge")
+    # rf.retry_failures now handles lists!
+    wrapper_script = rf.retry_failures(r_num_int, r_sec_int, commands_list)
+
+    if not wrapper_script:
+        messagebox.showerror("Error", "Failed to generate wrapper script.")
         return
 
-    # Format: MIN HOUR DOM MON DOW COMMAND
-    cron_expression = f"{minute} {hour} {day_of_month} {month} {day_of_week} {command}"
-    #print (cron_expression)
+    # 6. Schedule in Cron
+    cron_expression = f"{minute} {hour} {day_of_month} {month} {day_of_week} {wrapper_script}"
 
-    # Check file path and execution permissions
-    if (not rc.is_script_runnable(command)):
-        messagebox.showerror("Script cannot be run", "Check file path and execution permission.")
-    else: 
-        try:
-            # Get the current crontab entries
-            # Use subprocess.run to capture the current crontab safely
-            current_crontab_result = subprocess.run(
-                ['crontab', '-l'], 
-                capture_output=True, 
-                text=True, 
-                check=False  # Allow non-zero exit code if crontab is empty
-            )
-            
-            # If the crontab is empty, subprocess.run(['crontab', '-l']) might return an error
-            current_crontab = ""
-            if current_crontab_result.returncode == 0:
-                current_crontab = current_crontab_result.stdout
-            elif "no crontab" not in current_crontab_result.stderr:
-                # If it failed for a reason other than "no crontab for user"
-                messagebox.showerror("Crontab Error", current_crontab_result.stderr.strip())
-                return
+    try:
+        # Read current cron
+        current_crontab_result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
+        current_crontab = current_crontab_result.stdout if current_crontab_result.returncode == 0 else ""
+        
+        # Add new line
+        new_crontab = current_crontab + f"{cron_expression}\n"
 
-            if(int(r_number) == 0):
-                # Append the new job to the existing crontab
-                new_crontab = current_crontab + f"\n{cron_expression}\n"
-            else:
-                # Append the new job with retries to the existing crontab
-                new_cron_expression = f"{minute} {hour} {day_of_month} {month} {day_of_week} {rf.retry_failures(r_number, r_seconds, command)}"
-                new_crontab = current_crontab + f"\n{new_cron_expression}\n"
-                print (new_crontab)
+        # Write back
+        p = subprocess.run(['crontab', '-'], input=new_crontab, text=True, capture_output=True)
+        
+        if p.returncode == 0:
+            msg = "Single Task" if not is_chain else f"Chain of {len(commands_list)} Tasks"
+            messagebox.showinfo("Success", f"{msg} Scheduled Successfully!\n\nCron Line:\n{cron_expression}")
+        else:
+            messagebox.showerror("Cron Error", p.stderr)
 
-            # Write the new combined crontab back using a pipe
-            p1 = subprocess.Popen(['echo', new_crontab], stdout=subprocess.PIPE, text=True)
-            p2 = subprocess.Popen(['crontab', '-'], stdin=p1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            p1.stdout.close() # Allow p1 to receive a SIGPIPE if p2 exits
-            
-            # Wait for p2 to finish and get the output
-            stdout, stderr = p2.communicate()
-            
-            if p2.returncode == 0:
-                messagebox.showinfo("Success", f"Cron job scheduled successfully:\n{cron_expression}")
-            else:
-                messagebox.showerror("Scheduling Error", f"Failed to update crontab:\n{stderr.strip()}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
-        except FileNotFoundError:
-            messagebox.showerror("Error", "The 'crontab' command was not found.")
-        except Exception as e:
-            messagebox.showerror("General Error", f"An unexpected error occurred: {e}")
+# --- UI Helper Functions for Chaining ---
+def add_task_to_chain():
+    cmd = chain_entry.get().strip()
+    if cmd:
+        if rc.is_script_runnable(cmd):
+            chain_listbox.insert(tk.END, cmd)
+            chain_entry.delete(0, tk.END)
+        else:
+            messagebox.showwarning("Invalid Script", "File not found or not executable.")
+    else:
+        messagebox.showwarning("Empty", "Please enter a script path.")
 
-# --- GUI Setup ---
+def remove_task_from_chain():
+    selected_indices = chain_listbox.curselection()
+    for i in reversed(selected_indices):
+        chain_listbox.delete(i)
 
-# Create the main window
+def clear_chain():
+    chain_listbox.delete(0, tk.END)
+
+
+# --- MAIN GUI SETUP ---
 root = tk.Tk()
-root.title("Bash Cron Job Scheduler")
+root.title("Advanced Task Scheduler")
+root.geometry("700x550")
 
-# --- Command Input ---
-tk.Label(root, text="Bash Command to Run:", font=('Arial', 10, 'bold')).grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='w')
-command_entry = tk.Entry(root, width=50)
-command_entry.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
-command_entry.insert(0, getp.get_proj_dir()+"/sample_script.sh") # Starter command
+# 1. Header
+tk.Label(root, text="System Project Scheduler", font=('Arial', 16, 'bold'), fg="darkblue").pack(pady=10)
 
-# --- Cron Expression Inputs ---
-field_labels = ["Minute (0-59)", "Hour (0-23)", "Day of Month (1-31)", "Month (1-12)", "Day of Week (0-7)"]
-retry_labels = ["Interval (0-60)", "Max Tries (0-99)"]
-retry_values = ["0", "0"] # Default is 0 retries
-default_values = ["*", "*", "*", "*", "*"] # Default is every minute
+# 2. Timing Frame (Shared by both Tabs)
+# We put this outside the tabs because the Schedule applies to both logic types
+timing_frame = tk.LabelFrame(root, text="Schedule Configuration (Cron & Retries)", padx=10, pady=10)
+timing_frame.pack(padx=20, pady=5, fill="x")
 
-cron_frame = tk.Frame(root, padx=10, pady=10, relief=tk.GROOVE, borderwidth=2)
+# Grid layout for timing
+lbls = ["Min", "Hour", "Day", "Month", "DayWeek", "Attempts", "Delay (s)"]
+def_vals = ["*", "*", "*", "*", "*", "1", "0"]
+entries = []
 
-retry_frame = tk.Frame(root, padx=10, pady=10, relief=tk.GROOVE, borderwidth=2)
+for i, txt in enumerate(lbls):
+    tk.Label(timing_frame, text=txt, font=('Arial', 9)).grid(row=0, column=i, padx=5)
+    e = tk.Entry(timing_frame, width=8)
+    e.grid(row=1, column=i, padx=5)
+    e.insert(0, def_vals[i])
+    entries.append(e)
 
-cron_frame.grid(row=0, column=0, padx=10, pady=10)
+# Map entries to variable names for easy access
+minute_entry, hour_entry, day_month_entry, month_entry, day_week_entry, r_number_tries, r_seconds_entry = entries
 
-retry_frame .grid(row=1, column=0, padx=10, pady=10)
+# 3. Tabs (The Split Section)
+tab_control = ttk.Notebook(root)
 
-input_entries = []
-retry_entries = []
+# --- TAB 1: Single Task (Section 1) ---
+tab1 = tk.Frame(tab_control)
+tab_control.add(tab1, text='Single Task Reschedule')
 
-# Cron frame
-# Loop to create the labels inside the frame
-# # Add the title Label inside the frame
-tk.Label(cron_frame, text="--- Cron Recurrence ---", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=5, pady=10)
-for i, label in enumerate(field_labels):
-    # Note: Using cron_frame as the parent for the Label
-    tk.Label(cron_frame, text=label).grid(row=1, column=i, padx=1, sticky='w')
+tk.Label(tab1, text="Reschedule a Single Script", font=('Arial', 12, 'bold')).pack(pady=10)
+tk.Label(tab1, text="Script Path:").pack(anchor="w", padx=20)
+single_command_entry = tk.Entry(tab1, width=60)
+single_command_entry.pack(padx=20, pady=5)
+single_command_entry.insert(0, os.path.join(getp.get_proj_dir(), "sample_script.sh"))
 
-minute_entry = tk.Entry(cron_frame, width=8)
-minute_entry.grid(row=2, column=0, padx=5)
-minute_entry.insert(0, default_values[0])
-input_entries.append(minute_entry)
+btn_single = tk.Button(tab1, text="Schedule Single Task", bg="#dddddd", command=lambda: schedule_task(is_chain=False))
+btn_single.pack(pady=20)
 
-hour_entry = tk.Entry(cron_frame, width=8)
-hour_entry.grid(row=2, column=1, padx=5)
-hour_entry.insert(0, default_values[1])
-input_entries.append(hour_entry)
+# --- TAB 2: Workflow Chain (Section 2) ---
+tab2 = tk.Frame(tab_control)
+tab_control.add(tab2, text='Workflow Chaining')
 
-day_month_entry = tk.Entry(cron_frame, width=8)
-day_month_entry.grid(row=2, column=2, padx=5)
-day_month_entry.insert(0, default_values[2])
-input_entries.append(day_month_entry)
+tk.Label(tab2, text="Chain Multiple Tasks (Sequential)", font=('Arial', 12, 'bold')).pack(pady=10)
 
-month_entry = tk.Entry(cron_frame, width=8)
-month_entry.grid(row=2, column=3, padx=5)
-month_entry.insert(0, default_values[3])
-input_entries.append(month_entry)
+# Chain Input Area
+chain_input_frame = tk.Frame(tab2)
+chain_input_frame.pack(fill="x", padx=20)
 
-day_week_entry = tk.Entry(cron_frame, width=8)
-day_week_entry.grid(row=2, column=4, padx=5)
-day_week_entry.insert(0, default_values[4])
-input_entries.append(day_week_entry)
+tk.Label(chain_input_frame, text="Add Script:").pack(side="left")
+chain_entry = tk.Entry(chain_input_frame, width=40)
+chain_entry.pack(side="left", padx=5)
+tk.Button(chain_input_frame, text="+ Add", command=add_task_to_chain, bg="lightblue").pack(side="left")
 
-#retries
-tk.Label(retry_frame, text="--- Cron Retries---", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=5, pady=10)
-for i, label in enumerate(retry_labels):
-    tk.Label(retry_frame, text=label).grid(row=1, column=i, padx=1, sticky='w')
+# Listbox Area
+list_frame = tk.Frame(tab2)
+list_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-r_seconds_entry = tk.Entry(retry_frame, width=8)
-r_seconds_entry.grid(row=2, column=0, padx=5)
-r_seconds_entry.insert(0, retry_values[0])
-retry_entries.append(r_seconds_entry)
+chain_listbox = tk.Listbox(list_frame, height=8)
+chain_listbox.pack(side="left", fill="both", expand=True)
 
-r_number_tries = tk.Entry(retry_frame, width=8)
-r_number_tries.grid(row=2, column=1, padx=5)
-r_number_tries.insert(0, retry_values[1])
-retry_entries.append(r_number_tries)
+# Scrollbar for listbox
+scrollbar = tk.Scrollbar(list_frame)
+scrollbar.pack(side="right", fill="y")
+chain_listbox.config(yscrollcommand=scrollbar.set)
+scrollbar.config(command=chain_listbox.yview)
 
-# --- Schedule Button ---
-schedule_button = tk.Button(root, text="Add Cron Job", command=schedule_cron_task, font=('Arial', 12, 'bold'), bg='darkblue', fg='white')
-schedule_button.grid(row=5, column=0, columnspan=5, pady=20)
+# List Controls
+btn_frame = tk.Frame(tab2)
+btn_frame.pack(pady=5)
+tk.Button(btn_frame, text="Remove Selected", command=remove_task_from_chain, fg="red").pack(side="left", padx=10)
+tk.Button(btn_frame, text="Clear All", command=clear_chain).pack(side="left", padx=10)
 
-# Start the Tkinter event loop
+# Schedule Button for Chain
+btn_chain = tk.Button(tab2, text="Schedule Workflow Chain", bg="green", fg="white", font=('Arial', 11, 'bold'), command=lambda: schedule_task(is_chain=True))
+btn_chain.pack(pady=15)
+
+tab_control.pack(expand=1, fill="both", padx=10, pady=10)
+
 root.mainloop()
