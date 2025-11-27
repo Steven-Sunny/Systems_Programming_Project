@@ -130,7 +130,7 @@ timing_frame = tk.LabelFrame(root, text="Schedule Configuration (Cron & Retries)
 timing_frame.pack(padx=20, pady=5, fill="x")
 
 # Grid layout for timing
-lbls = ["Min", "Hour", "Day", "Month", "DayWeek", "Max Retries", "Delay (s)"]
+lbls = ["Min", "Hour", "Day", "Month", "DayWeek", "Attempts", "Delay (s)"]
 def_vals = ["*", "*", "*", "*", "*", "1", "0"]
 entries = []
 
