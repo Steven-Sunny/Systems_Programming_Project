@@ -97,7 +97,7 @@ root.title("Bash Cron Job Scheduler")
 tk.Label(root, text="Bash Command to Run:", font=('Arial', 10, 'bold')).grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='w')
 command_entry = tk.Entry(root, width=50)
 command_entry.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
-command_entry.insert(0, "/home/vboxuser/Desktop/Systems_Programming_Project/sample_script.sh") # Starter command
+command_entry.insert(0, "/home/steve/Desktop/Systems_Programming_Project/sample_script.sh") # Starter command
 
 # --- Cron Expression Inputs ---
 field_labels = ["Minute (0-59)", "Hour (0-23)", "Day of Month (1-31)", "Month (1-12)", "Day of Week (0-7)"]
@@ -170,3 +170,5 @@ schedule_button.grid(row=5, column=0, columnspan=5, pady=20)
 
 # Start the Tkinter event loop
 root.mainloop()
+
+# /home/steve/Desktop/Systems_Programming_Project/retry_scripts/sample_fail_script_retry_99_1_1764199773.0804682_.sh

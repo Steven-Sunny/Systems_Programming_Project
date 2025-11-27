@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTPUT_DIR="/home/vboxuser/Desktop/Systems_Programming_Project/sample_output"
+OUTPUT_DIR="/home/steve/Desktop/Systems_Programming_Project/sample_output"
 
 BASE_NAME="hello_output"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

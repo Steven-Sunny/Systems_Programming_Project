@@ -20,9 +20,13 @@ def retry_failures (tries=0, interval=0, command="/home/user/my_script.sh"):
     script_name_noext = path_obj.stem
 
     # Create new path
+    cur_time = time.time()
     output_directory = "./retry_scripts/" 
-    output_filename = "./retry_scripts/" + script_name_noext + "_retry_" + str(tries) + "_" + str(interval) + "_" + str(time.time()) + "_.sh"
+    output_filename = "./retry_scripts/" + script_name_noext + "_retry_" + str(tries) + "_" + str(interval) + "_" + str(cur_time) + "_.sh"
+    executable_filename = "/home/steve/Desktop/Systems_Programming_Project/retry_scripts/" + script_name_noext + "_retry_" + str(tries) + "_" + str(interval) + "_" + str(cur_time) + "_.sh"
     
+    #/home/steve/Desktop/Systems_Programming_Project/main.py
+
     try:
         # Make new directory for scripts
         os.makedirs(output_directory, exist_ok = True)
@@ -33,7 +37,7 @@ def retry_failures (tries=0, interval=0, command="/home/user/my_script.sh"):
 
         
         os.chmod(output_filename, 0o755)
-        return output_filename
+        return executable_filename
     
     except Exception as e:
         return None
