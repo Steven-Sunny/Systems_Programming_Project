@@ -149,9 +149,9 @@ tab_control = ttk.Notebook(root)
 
 # --- TAB 1: Single Task (Section 1) ---
 tab1 = tk.Frame(tab_control)
-tab_control.add(tab1, text='Single Task Reschedule')
+tab_control.add(tab1, text='Single Task Schedule')
 
-tk.Label(tab1, text="Reschedule a Single Script", font=('Arial', 12, 'bold')).pack(pady=10)
+tk.Label(tab1, text="Schedule a Single Script", font=('Arial', 12, 'bold')).pack(pady=10)
 tk.Label(tab1, text="Script Path:").pack(anchor="w", padx=20)
 single_command_entry = tk.Entry(tab1, width=60)
 single_command_entry.pack(padx=20, pady=5)
