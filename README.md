@@ -60,6 +60,11 @@ These fields configure the retry mechanism. Set **Max Tries** to **0** to disabl
 | **Interval**| 0-60 | Time to wait **in seconds** before retrying the command. | `0` |
 | **Max Tries** | 0-99 | The **total** number of times the command should attempt to run (including the first attempt). | `0` |
 
+### 3.5 Workflow Management Tab
+- Add path names of tasks and run them in sequence.
+- Remove specific tasks or remove them all at once.
+- Schedule tasks using the same cron entry.
+
 ### 4. Scheduling
 
 Click the **Add Cron Job** button. The application will attempt to add the entry to your user's crontab and provide feedback on success or failure through cron emails.
