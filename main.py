@@ -90,9 +90,12 @@ def schedule_task(is_chain=False):
             msg = "Single Task" if not is_chain else f"Chain of {len(commands_list)} Tasks"
             messagebox.showinfo("Success", f"{msg} Scheduled Successfully!\n\nCron Line:\n{cron_expression}")
         else:
+            # Removes created wrapper script
+            os.remove(wrapper_script)
             messagebox.showerror("Cron Error", p.stderr)
 
     except Exception as e:
+        os.remove(wrapper_script)
         messagebox.showerror("Error", str(e))
 
 # --- UI Helper Functions for Chaining ---
